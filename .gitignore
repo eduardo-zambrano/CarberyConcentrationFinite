@@ -1,0 +1,22 @@
+# Lake build artifacts
+.lake/
+build/
+lake-packages/
+
+# Editor files
+*.olean
+*.ilean
+*.trace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.bak
+*.swp
+*~
+
+# Aristotle output files (generated, not source)
+*-output.lean
+*_aristotle.lean
