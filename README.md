@@ -29,12 +29,20 @@ This formalization develops multivariate extensions of classical concentration i
 
 ```
 CarberyConcentrationFinite/
-├── Basic.lean                    # Core definitions and Carbery's inequality
-├── ConcentrationInequalities.lean # Markov, Chebyshev, moment bounds
-├── MGF.lean                      # MGF bounds, Chernoff, sub-Gaussian
-├── Permutation.lean              # Variable reordering optimization
-└── carbery_proof_context.md      # Proof strategy notes
+├── Basic.lean                     # Core definitions, Carbery's inequality, independence structure
+├── ConcentrationInequalities.lean # Markov, Chebyshev, general moment bounds
+├── MGF.lean                       # MGF bounds, Chernoff, sub-Gaussian concentration
+└── Permutation.lean               # Variable reordering optimization
 ```
+
+### File-to-Paper Mapping
+
+| File | Paper Section |
+|------|---------------|
+| `Basic.lean` | Section 2 (Preliminaries) + Section 4 (Properties of Q_n) |
+| `ConcentrationInequalities.lean` | Section 3.1-3.2 (Markov, Chebyshev) |
+| `MGF.lean` | Section 3.3-3.5 (MGF, Chernoff, Sub-Gaussian) |
+| `Permutation.lean` | Section 6 (Variable Reordering) |
 
 ## Building
 
