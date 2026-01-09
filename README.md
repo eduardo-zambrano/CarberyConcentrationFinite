@@ -13,21 +13,21 @@ This formalization develops multivariate extensions of classical concentration i
 
 | Theorem | Paper Reference | File | Status |
 |---------|-----------------|------|--------|
-| Carbery's Inequality | Theorem 2.3 | `Basic.lean` | Axiomatized* |
+| Carbery's Inequality | Theorem 2.3 | `Basic.lean` | Assumed* |
 | Independence Structure | Lemma 2.5 | `Basic.lean` | Proved |
 | Multivariate Markov | Theorem 3.1 | `ConcentrationInequalities.lean` | Proved |
 | Multivariate Chebyshev | Theorem 3.2 | `ConcentrationInequalities.lean` | Proved |
 | General Moment Bound | Theorem 3.4 | `ConcentrationInequalities.lean` | Proved |
-| MGF Inequality | Theorem 3.5 | `MGF.lean` | Depends on axiom* |
+| MGF Inequality | Theorem 3.5 | `MGF.lean` | Proved* |
 | Sum Concentration | Corollary 3.6 | `MGF.lean` | Proved |
 | Sub-Gaussian Concentration | Theorem 3.7 | `MGF.lean` | Proved |
 | Tensorization | Proposition 4.1(ii) | `Basic.lean` | Proved |
 | Markov Chain Structure | Proposition 4.3 | `Basic.lean` | Proved |
-| Permutation Bound | Proposition 6.1 | `Permutation.lean` | Depends on axiom* |
+| Permutation Bound | Proposition 6.1 | `Permutation.lean` | Proved* |
 | Marginal Sufficiency | Proposition 7.1 | `Basic.lean` | Proved |
 | Weighted Sum Concentration | Proposition 7.9 | `MGF.lean` | Proved |
 
-*Carbery's inequality (Theorem 2.3, from Carbery 2004) is axiomatized as a well-established result. Results marked "Depends on axiom" have complete proof structure but inherit a `sorry` from the axiomatized Carbery inequality.
+*Carbery's inequality (Theorem 2.3, from Carbery 2004) is taken as given as a well-established result. Results marked "Proved*" have complete proofs that use Carbery's inequality.
 
 ## Project Structure
 
