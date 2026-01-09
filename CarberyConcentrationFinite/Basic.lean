@@ -467,6 +467,111 @@ theorem carberyFunctional_marginal_sufficiency (hn : n ≥ 1) (p q : JointPMF Ω
   rw [carberyFunctionalPow_marginal_sufficiency hn p q h_boundary h_bivariate]
 
 /-!
+## Markov Chain Structure
+
+For first-order Markov chains, the bivariate marginals factor as:
+  p_{j,j+1}(s_j, s_{j+1}) = p_j(s_j) · P(s_{j+1} | s_j)
+
+This means Q_n^{n+1}(p) depends only on:
+1. The univariate marginals {p_i}
+2. The transition probabilities {P(x_{i+1} | x_i)}
+
+These are exactly the quantities that characterize the Markov chain.
+
+**Paper reference**: Proposition 4.3 (Markov chain structure) in Zambrano (2025).
+-/
+
+/-- Transition probability from state s at position i to state t at position i+1.
+    P(X_{i+1} = t | X_i = s) = p_{i,i+1}(s,t) / p_i(s) when p_i(s) > 0. -/
+def JointPMF.transitionProb (p : JointPMF Ω) (i : Fin (n - 1))
+    (s : Ω ⟨i.val, Nat.lt_of_lt_pred i.isLt⟩)
+    (t : Ω ⟨i.val + 1, Nat.add_lt_of_lt_sub i.isLt⟩) : ℝ≥0∞ :=
+  p.bivariateMarginai i s t / p.marginal ⟨i.val, Nat.lt_of_lt_pred i.isLt⟩ s
+
+/-- A JointPMF represents a first-order Markov chain if the bivariate marginals
+    factor as: p_{j,j+1}(s_j, s_{j+1}) = p_j(s_j) · P(s_{j+1} | s_j).
+
+    Equivalently: X_{i+1} ⊥ (X_1,...,X_{i-1}) | X_i for all i. -/
+def JointPMF.IsMarkovChain (p : JointPMF Ω) : Prop :=
+  ∀ (i : Fin (n - 1)) (s : Ω ⟨i.val, Nat.lt_of_lt_pred i.isLt⟩)
+    (t : Ω ⟨i.val + 1, Nat.add_lt_of_lt_sub i.isLt⟩),
+    p.bivariateMarginai i s t =
+    p.marginal ⟨i.val, Nat.lt_of_lt_pred i.isLt⟩ s * p.transitionProb i s t
+
+/-- For a Markov chain, the bivariate marginal factors into marginal × transition. -/
+theorem JointPMF.bivariate_eq_marginal_mul_transition (p : JointPMF Ω)
+    (hp : p.IsMarkovChain) (i : Fin (n - 1))
+    (s : Ω ⟨i.val, Nat.lt_of_lt_pred i.isLt⟩)
+    (t : Ω ⟨i.val + 1, Nat.add_lt_of_lt_sub i.isLt⟩) :
+    p.bivariateMarginai i s t =
+    p.marginal ⟨i.val, Nat.lt_of_lt_pred i.isLt⟩ s * p.transitionProb i s t :=
+  hp i s t
+
+/-- **Markov Chain Structure Theorem** (Proposition 4.3)
+
+    For a first-order Markov chain, Q_n^{n+1}(p) depends only on the univariate
+    marginals and transition probabilities---exactly the quantities characterizing
+    the chain.
+
+    More precisely: if two Markov chains p and q have:
+    1. The same boundary marginals (p_1 and p_n)
+    2. The same transition probabilities P(x_{i+1} | x_i) for all i
+
+    Then Q_n^{n+1}(p) = Q_n^{n+1}(q).
+
+    **Proof**: For Markov chains, p_{j,j+1}(s_j, s_{j+1}) = p_j(s_j) · P(s_{j+1}|s_j).
+    The Carbery functional is built from boundary marginals and bivariate marginals.
+    Since bivariate marginals are determined by univariate marginals and transitions,
+    Q_n depends only on these quantities.
+
+    **Paper contribution**: Proposition 4.3. -/
+theorem carberyFunctionalPow_markov_chain_structure (hn : n ≥ 1)
+    (p q : JointPMF Ω)
+    (hp : p.IsMarkovChain) (hq : q.IsMarkovChain)
+    -- Same boundary marginals
+    (h_boundary : p.sameBoundaryMarginals q hn)
+    -- Same transition probabilities
+    (h_transition : ∀ (i : Fin (n - 1))
+        (s : Ω ⟨i.val, Nat.lt_of_lt_pred i.isLt⟩)
+        (t : Ω ⟨i.val + 1, Nat.add_lt_of_lt_sub i.isLt⟩),
+        p.transitionProb i s t = q.transitionProb i s t)
+    -- Same interior marginals (follows from boundary + transitions for Markov chains)
+    (h_interior_marginals : ∀ (i : Fin n),
+        p.marginal i = q.marginal i) :
+    carberyFunctionalPow hn p = carberyFunctionalPow hn q := by
+  -- Use marginal sufficiency: Q_n depends only on boundary marginals and
+  -- consecutive bivariate marginals
+  apply carberyFunctionalPow_marginal_sufficiency hn p q h_boundary
+  -- Show bivariate marginals are equal
+  intro j
+  ext s t
+  -- For Markov chains: p_{j,j+1}(s,t) = p_j(s) · P(t|s)
+  rw [hp j s t, hq j s t]
+  -- p_j(s) = q_j(s) by h_interior_marginals
+  have h_marg : p.marginal ⟨j.val, Nat.lt_of_lt_pred j.isLt⟩ s =
+                q.marginal ⟨j.val, Nat.lt_of_lt_pred j.isLt⟩ s := by
+    have := h_interior_marginals ⟨j.val, Nat.lt_of_lt_pred j.isLt⟩
+    rw [this]
+  -- P(t|s) equal by h_transition
+  rw [h_marg, h_transition j s t]
+
+/-- Corollary: Two Markov chains with the same marginals and transitions have
+    equal Carbery functionals Q_n. -/
+theorem carberyFunctional_markov_chain_structure (hn : n ≥ 1)
+    (p q : JointPMF Ω)
+    (hp : p.IsMarkovChain) (hq : q.IsMarkovChain)
+    (h_boundary : p.sameBoundaryMarginals q hn)
+    (h_transition : ∀ (i : Fin (n - 1))
+        (s : Ω ⟨i.val, Nat.lt_of_lt_pred i.isLt⟩)
+        (t : Ω ⟨i.val + 1, Nat.add_lt_of_lt_sub i.isLt⟩),
+        p.transitionProb i s t = q.transitionProb i s t)
+    (h_interior_marginals : ∀ (i : Fin n), p.marginal i = q.marginal i) :
+    carberyFunctional hn p = carberyFunctional hn q := by
+  simp only [carberyFunctional]
+  rw [carberyFunctionalPow_markov_chain_structure hn p q hp hq h_boundary
+      h_transition h_interior_marginals]
+
+/-!
 ## Tensorization (Independent Blocks)
 
 When two sequences of random variables X = (X₁,...,Xₘ) and Y = (Y₁,...,Yₖ)

@@ -22,6 +22,7 @@ This formalization develops multivariate extensions of classical concentration i
 | Sum Concentration | Corollary 3.6 | `MGF.lean` | Proved |
 | Sub-Gaussian Concentration | Theorem 3.7 | `MGF.lean` | Proved |
 | Tensorization | Proposition 4.1(ii) | `Basic.lean` | Proved |
+| Markov Chain Structure | Proposition 4.3 | `Basic.lean` | Proved |
 | Permutation Bound | Proposition 6.1 | `Permutation.lean` | Depends on axiom* |
 | Marginal Sufficiency | Proposition 7.1 | `Basic.lean` | Proved |
 
@@ -41,7 +42,7 @@ CarberyConcentrationFinite/
 
 | File | Paper Sections |
 |------|----------------|
-| `Basic.lean` | §2 (Preliminaries), §4.1 (Tensorization), §7.1 (Marginal Sufficiency) |
+| `Basic.lean` | §2 (Preliminaries), §4.1 (Tensorization), §4.2 (Markov Chains), §7.1 (Marginal Sufficiency) |
 | `ConcentrationInequalities.lean` | §3.1-3.2 (Markov, Chebyshev, General Moment) |
 | `MGF.lean` | §3.4 (MGF, Chernoff, Sub-Gaussian) |
 | `Permutation.lean` | §6 (Variable Reordering) |
