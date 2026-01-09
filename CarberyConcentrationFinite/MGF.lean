@@ -871,4 +871,106 @@ theorem sumMgf_of_independent (p : JointPMF Ω) (hp : p.IsIndependent)
   -- Apply independence factorization
   exact expectation_prod_of_independent p hp (fun i s => ENNReal.ofReal (Real.exp (t * g i s)))
 
+/-!
+## Weighted Sum Concentration
+
+For weighted sums S = ∑ᵢ wᵢ gᵢ(Xᵢ), if each gᵢ(Xᵢ) is sub-Gaussian with parameter σᵢ²,
+then wᵢ gᵢ(Xᵢ) is sub-Gaussian with parameter wᵢ² σᵢ².
+
+This allows us to apply the sub-Gaussian concentration to weighted sums.
+
+**Paper reference**: Proposition 7.9 (Weighted sum concentration) in Zambrano (2025).
+-/
+
+/-- Scaling a sub-Gaussian variable by a constant w scales the parameter by w².
+    If g is sub-Gaussian with parameter σ², then w·g is sub-Gaussian with parameter w²σ². -/
+theorem isSubGaussianCentered_scale (p : JointPMF Ω) (g : ∀ i, Ω i → ℝ)
+    (i : Fin n) (σsq : ℝ) (w : ℝ)
+    (hσ : p.IsSubGaussianCentered g i σsq) :
+    p.IsSubGaussianCentered (fun j s => w * g j s) i (w ^ 2 * σsq) := by
+  constructor
+  · -- w² σ² ≥ 0
+    apply mul_nonneg (sq_nonneg w) hσ.1
+  · -- MGF bound for scaled variable
+    intro t
+    -- Mean of w·g is w·(mean of g)
+    have mean_scale : p.expectation i (fun s => w * g i s) = w * p.expectation i (g i) := by
+      simp only [JointPMF.expectation]
+      simp_rw [mul_comm (p.marginal i _).toReal (w * _), mul_assoc w]
+      rw [← Finset.mul_sum]
+      congr 1
+      apply Finset.sum_congr rfl
+      intro x _
+      ring
+    -- w·g(s) - w·μ = w·(g(s) - μ)
+    have centered_scale : ∀ s, w * g i s - p.expectation i (fun s => w * g i s) =
+        w * (g i s - p.expectation i (g i)) := by
+      intro s
+      rw [mean_scale]
+      ring
+    simp_rw [centered_scale]
+    -- exp(t · w · (g - μ)) = exp((t·w) · (g - μ))
+    have exp_factor : ∀ s, Real.exp (t * (w * (g i s - p.expectation i (g i)))) =
+        Real.exp ((t * w) * (g i s - p.expectation i (g i))) := by
+      intro s
+      ring_nf
+    simp_rw [exp_factor]
+    -- Apply original sub-Gaussian bound at t' = t·w
+    calc ∑ s, p.marginal i s * ENNReal.ofReal (Real.exp ((t * w) * (g i s - p.expectation i (g i))))
+        ≤ ENNReal.ofReal (Real.exp (σsq * (t * w) ^ 2 / 2)) := hσ.2 (t * w)
+      _ = ENNReal.ofReal (Real.exp (w ^ 2 * σsq * t ^ 2 / 2)) := by
+          congr 1
+          ring
+
+/-- **Weighted Sum Concentration** (Proposition 7.9)
+
+    Let g : ∀ i, Ω i → ℝ be functions where each gᵢ(Xᵢ) is sub-Gaussian with
+    parameter σᵢ². For weights w : Fin n → ℝ (with wᵢ > 0), consider the
+    weighted sum S = ∑ᵢ wᵢ gᵢ(Xᵢ).
+
+    Then for a > 0:
+    P(S - E[S] ≥ a) ≤ Qₙ(p) · exp(-a² / (2(n+1) ∑ᵢ wᵢ² σᵢ²))
+
+    **Proof**: Apply sub-Gaussian concentration (Theorem 3.7) to the scaled
+    functions wᵢ·gᵢ, noting that wᵢ·gᵢ(Xᵢ) is sub-Gaussian with parameter wᵢ²σᵢ².
+
+    **Paper contribution**: Proposition 7.9. -/
+theorem weighted_sum_concentration (hn : n ≥ 1) (p : JointPMF Ω)
+    (g : ∀ i, Ω i → ℝ) (σsq : Fin n → ℝ) (w : Fin n → ℝ)
+    (hσ : ∀ i, p.IsSubGaussianCentered g i (σsq i))
+    (a : ℝ) (ha : a > 0) :
+    let g' := fun i s => w i * g i s
+    let μ := ∑ i, p.expectation i (g' i)
+    (∑ x : ∀ i, Ω i, if ∑ i, g' i (x i) - μ ≥ a then p.prob x else 0) ≤
+    carberyFunctional hn p *
+    ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (n + 1 : ℕ) * ∑ i, w i ^ 2 * σsq i))) := by
+  intro g' μ
+  -- The scaled functions w·g are sub-Gaussian with scaled parameters
+  have hσ' : ∀ i, p.IsSubGaussianCentered g' i (w i ^ 2 * σsq i) := by
+    intro i
+    exact isSubGaussianCentered_scale p g i (σsq i) (w i) (hσ i)
+  -- Apply the standard sub-Gaussian concentration theorem
+  exact subgaussian_concentration hn p g' (fun i => w i ^ 2 * σsq i) hσ' a ha
+
+/-- Corollary: Weighted sum concentration with uniform weights.
+    When all weights are equal to w, the bound simplifies. -/
+theorem weighted_sum_concentration_uniform (hn : n ≥ 1) (p : JointPMF Ω)
+    (g : ∀ i, Ω i → ℝ) (σsq : Fin n → ℝ) (w : ℝ)
+    (hσ : ∀ i, p.IsSubGaussianCentered g i (σsq i))
+    (a : ℝ) (ha : a > 0) :
+    let g' := fun i s => w * g i s
+    let μ := ∑ i, p.expectation i (g' i)
+    (∑ x : ∀ i, Ω i, if ∑ i, g' i (x i) - μ ≥ a then p.prob x else 0) ≤
+    carberyFunctional hn p *
+    ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (n + 1 : ℕ) * w ^ 2 * ∑ i, σsq i))) := by
+  intro g' μ
+  -- Apply the general weighted version
+  have := weighted_sum_concentration hn p g σsq (fun _ => w) hσ a ha
+  -- Simplify: ∑ᵢ w² σᵢ² = w² ∑ᵢ σᵢ²
+  have sum_simplify : ∑ i : Fin n, w ^ 2 * σsq i = w ^ 2 * ∑ i, σsq i := by
+    rw [← Finset.mul_sum]
+  simp only [sum_simplify] at this
+  convert this using 3
+  ring
+
 end
