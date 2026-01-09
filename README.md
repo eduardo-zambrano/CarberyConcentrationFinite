@@ -27,7 +27,7 @@ This formalization develops multivariate extensions of classical concentration i
 | Marginal Sufficiency | Proposition 7.1 | `Basic.lean` | Proved |
 | Weighted Sum Concentration | Proposition 7.9 | `MGF.lean` | Proved |
 
-*Carbery's inequality (Theorem 2.3, from Carbery 2004) is taken as given as a well-established result. Results marked "Proved*" have complete proofs that use Carbery's inequality.
+*Carbery's inequality (Theorem 2.3, from Carbery 2004) is taken as given as a well-established result. Results marked "Proved\*" have complete proofs that use Carbery's inequality.
 
 ## Project Structure
 
