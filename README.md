@@ -13,7 +13,7 @@ This formalization develops multivariate extensions of classical concentration i
 
 | Theorem | Paper Reference | File | Status |
 |---------|-----------------|------|--------|
-| Carbery's Inequality | Theorem 2.3 | `Basic.lean` | Assumed* |
+| Carbery's Inequality | Theorem 2.3 | `Basic.lean` | Taken as given* |
 | Independence Structure | Lemma 2.5 | `Basic.lean` | Proved |
 | Multivariate Markov | Theorem 3.1 | `ConcentrationInequalities.lean` | Proved |
 | Multivariate Chebyshev | Theorem 3.2 | `ConcentrationInequalities.lean` | Proved |
