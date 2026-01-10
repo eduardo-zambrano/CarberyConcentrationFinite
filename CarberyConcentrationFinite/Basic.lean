@@ -152,7 +152,7 @@ The finite-case version can be proved by elementary induction using Hölder's
 inequality, but this is not a contribution of the current paper.
 -/
 
-/-- **Carbery's Inequality** (Finite State Spaces) - ASSUMED.
+/-- **Carbery's Inequality** (Finite State Spaces) - Theorem 2.3.
 
     For functions fᵢ : Ωᵢ → ℝ≥0∞,
     ∑_x K(x) ∏ᵢ fᵢ(xᵢ) ≤ Qₙ(K) · ∏ᵢ ‖fᵢ‖_{L^{n+1}}
@@ -160,22 +160,18 @@ inequality, but this is not a contribution of the current paper.
     where the L^{n+1} norms are with respect to counting measure (not the marginal).
     For n=1, this reduces to Cauchy-Schwarz: ∑ K·f ≤ ‖K‖₂ · ‖f‖₂.
 
-    This is a well-known result [Carbery 2004]. We assume it to focus
-    the formalization on the paper's novel contributions.
+    This is a well-established result from harmonic analysis, taken as an axiom
+    to focus the formalization on the paper's novel contributions.
 
-    Reference: Carbery, A. Proc. AMS 132(11), 3141-3152, 2004.
-    See also: Tao, T. "A generalized Cauchy-Schwarz inequality via Gibbs" (2023).
-
-    Note: This is marked `sorry` rather than `axiom` for compatibility with
-    automated provers. The result is a published theorem (2004) that the
-    paper builds upon, not a novel contribution. -/
-theorem carberyInequality {n : ℕ} {Ω : Fin n → Type*}
+    Reference: Carbery, A. "A multilinear generalisation of the Cauchy-Schwarz
+    inequality." Proc. AMS 132(11), 3141-3152, 2004.
+    See also: Tao, T. "A generalized Cauchy-Schwarz inequality via Gibbs" (2023). -/
+axiom carberyInequality {n : ℕ} {Ω : Fin n → Type*}
     [∀ i, Fintype (Ω i)] [∀ i, DecidableEq (Ω i)]
     (hn : n ≥ 1) (K : JointPMF Ω)
     (f : ∀ i, Ω i → ℝ≥0∞) :
     ∑ x : ∀ i, Ω i, K.prob x * ∏ i, f i (x i) ≤
-    carberyFunctional hn K * ∏ i : Fin n, lpNormFinite (n + 1 : ℝ) (f i) := by
-  sorry
+    carberyFunctional hn K * ∏ i : Fin n, lpNormFinite (n + 1 : ℝ) (f i)
 
 /-!
 ## Independence Structure

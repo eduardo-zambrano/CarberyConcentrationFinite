@@ -13,7 +13,7 @@ This formalization develops multivariate extensions of classical concentration i
 
 | Theorem | Paper Reference | File | Status |
 |---------|-----------------|------|--------|
-| Carbery's Inequality | Theorem 2.3 | `Basic.lean` | Axiomatized* |
+| Carbery's Inequality | Theorem 2.3 | `Basic.lean` | Axiom* |
 | Independence Structure | Lemma 2.5 | `Basic.lean` | Proved |
 | Multivariate Markov | Theorem 3.1 | `ConcentrationInequalities.lean` | Proved |
 | Multivariate Chebyshev | Theorem 3.2 | `ConcentrationInequalities.lean` | Proved |
@@ -26,7 +26,7 @@ This formalization develops multivariate extensions of classical concentration i
 | Permutation Bound | Proposition 5.1 | `Permutation.lean` | Proved |
 | Marginal Sufficiency | Proposition 6.1 | `Basic.lean` | Proved |
 
-*Carbery's inequality (Theorem 2.3, from Carbery 2004) is axiomatized as a well-established result from harmonic analysis. All other results are fully proved from this foundation.
+*Carbery's inequality (Theorem 2.3, from Carbery 2004) is declared as an `axiom`, being a well-established result from harmonic analysis. All other results are fully proved from this foundation.
 
 ## Project Structure
 
@@ -77,7 +77,7 @@ def carberyFunctional (hn : n ≥ 1) (p : JointPMF Ω) : ℝ≥0∞ :=
 ### Carbery's Inequality
 
 ```lean
-theorem carberyInequality (hn : n ≥ 1) (K : JointPMF Ω) (f : ∀ i, Ω i → ℝ≥0∞) :
+axiom carberyInequality (hn : n ≥ 1) (K : JointPMF Ω) (f : ∀ i, Ω i → ℝ≥0∞) :
     ∑ x : ∀ i, Ω i, K.prob x * ∏ i, f i (x i) ≤
     carberyFunctional hn K * ∏ i : Fin n, lpNormFinite (n + 1 : ℝ) (f i)
 ```
