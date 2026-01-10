@@ -13,21 +13,20 @@ This formalization develops multivariate extensions of classical concentration i
 
 | Theorem | Paper Reference | File | Status |
 |---------|-----------------|------|--------|
-| Carbery's Inequality | Theorem 2.3 | `Basic.lean` | Taken as given* |
+| Carbery's Inequality | Theorem 2.3 | `Basic.lean` | Axiomatized* |
 | Independence Structure | Lemma 2.5 | `Basic.lean` | Proved |
 | Multivariate Markov | Theorem 3.1 | `ConcentrationInequalities.lean` | Proved |
 | Multivariate Chebyshev | Theorem 3.2 | `ConcentrationInequalities.lean` | Proved |
 | General Moment Bound | Theorem 3.4 | `ConcentrationInequalities.lean` | Proved |
-| MGF Inequality | Theorem 3.5 | `MGF.lean` | Proved* |
+| MGF Inequality | Theorem 3.5 | `MGF.lean` | Proved |
 | Sum Concentration | Corollary 3.6 | `MGF.lean` | Proved |
 | Sub-Gaussian Concentration | Theorem 3.7 | `MGF.lean` | Proved |
 | Tensorization | Proposition 4.1(ii) | `Basic.lean` | Proved |
 | Markov Chain Structure | Proposition 4.3 | `Basic.lean` | Proved |
-| Permutation Bound | Proposition 6.1 | `Permutation.lean` | Proved* |
-| Marginal Sufficiency | Proposition 7.1 | `Basic.lean` | Proved |
-| Weighted Sum Concentration | Proposition 7.9 | `MGF.lean` | Proved |
+| Permutation Bound | Proposition 5.1 | `Permutation.lean` | Proved |
+| Marginal Sufficiency | Proposition 6.1 | `Basic.lean` | Proved |
 
-*Carbery's inequality (Theorem 2.3, from Carbery 2004) is taken as given as a well-established result. Results marked "Proved\*" have complete proofs that use Carbery's inequality.
+*Carbery's inequality (Theorem 2.3, from Carbery 2004) is axiomatized as a well-established result from harmonic analysis. All other results are fully proved from this foundation.
 
 ## Project Structure
 
@@ -43,10 +42,10 @@ CarberyConcentrationFinite/
 
 | File | Paper Sections |
 |------|----------------|
-| `Basic.lean` | §2 (Preliminaries), §4.1 (Tensorization), §4.2 (Markov Chains), §7.1 (Marginal Sufficiency) |
+| `Basic.lean` | §2 (Preliminaries), §4 (Properties of Q_n: tensorization, Markov chains), §6 (Marginal Sufficiency) |
 | `ConcentrationInequalities.lean` | §3.1-3.2 (Markov, Chebyshev, General Moment) |
-| `MGF.lean` | §3.4 (MGF, Chernoff, Sub-Gaussian), §7.3 (Weighted Sums) |
-| `Permutation.lean` | §6 (Variable Reordering) |
+| `MGF.lean` | §3.3-3.4 (MGF, Chernoff, Sub-Gaussian) |
+| `Permutation.lean` | §5 (Variable Reordering) |
 
 ## Building
 
@@ -58,7 +57,7 @@ lake update
 lake build
 ```
 
-Requires Lean 4 (v4.24.0) and Mathlib.
+Requires Lean 4 and Mathlib.
 
 ## Key Definitions
 
@@ -83,7 +82,7 @@ theorem carberyInequality (hn : n ≥ 1) (K : JointPMF Ω) (f : ∀ i, Ω i → 
     carberyFunctional hn K * ∏ i : Fin n, lpNormFinite (n + 1 : ℝ) (f i)
 ```
 
-**Note:** Uses counting measure norms `lpNormFinite`, not marginal-weighted norms.
+**Note:** Uses counting measure norms `lpNormFinite`, not marginal-weighted norms. This is essential for the sub-Gaussian concentration theorem (Theorem 3.7).
 
 ## References
 

@@ -408,7 +408,7 @@ This is immediate from the definition, but we state it explicitly as it has
 important consequences: Q_n does not distinguish between joint distributions
 that agree on these low-dimensional projections.
 
-**Paper reference**: Proposition 7.1 (Marginal sufficiency) in Zambrano (2025).
+**Paper reference**: Proposition 6.1 (Marginal sufficiency) in Zambrano (2025).
 -/
 
 /-- Two JointPMFs have the same boundary marginals. -/
@@ -420,7 +420,7 @@ def JointPMF.sameBoundaryMarginals (p q : JointPMF Ω) (hn : n ≥ 1) : Prop :=
 def JointPMF.sameConsecutiveBivariateMarginals (p q : JointPMF Ω) : Prop :=
   ∀ j : Fin (n - 1), p.bivariateMarginai j = q.bivariateMarginai j
 
-/-- **Marginal Sufficiency Theorem** (Proposition 7.1)
+/-- **Marginal Sufficiency Theorem** (Proposition 6.1)
 
     The Carbery functional Q_n^{n+1}(p) depends on the joint distribution p only
     through the boundary univariate marginals (p₁, pₙ) and the consecutive

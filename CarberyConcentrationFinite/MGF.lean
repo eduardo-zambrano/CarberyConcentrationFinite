@@ -283,7 +283,7 @@ This is a **paper contribution** extending sub-Gaussian bounds to dependent vari
     In the finite case, this is a condition on finite sums.
 
     **Note**: This is the marginal-weighted version. See `IsSubGaussianCounting` for
-    the counting measure version that matches the paper's Theorem 3.5. -/
+    the counting measure version that matches the paper's Theorem 3.7. -/
 def JointPMF.IsSubGaussian (p : JointPMF Ω) (g : ∀ i, Ω i → ℝ) (i : Fin n) (σsq : ℝ) : Prop :=
   σsq ≥ 0 ∧ ∀ t : ℝ, p.mgf g i t ≤ ENNReal.ofReal (Real.exp (σsq * t ^ 2 / 2))
 
@@ -294,7 +294,7 @@ def JointPMF.IsSubGaussianCentered (p : JointPMF Ω) (g : ∀ i, Ω i → ℝ) (
     ∑ s : Ω i, p.marginal i s * ENNReal.ofReal (Real.exp (t * (g i s - μ))) ≤
     ENNReal.ofReal (Real.exp (σsq * t ^ 2 / 2))
 
-/-- **Counting measure sub-Gaussian** (matches paper's Theorem 3.5):
+/-- **Counting measure sub-Gaussian** (matches paper's Theorem 3.7):
     ∑_s exp(t · (g(s) - μ)) ≤ |Ω_i| · exp(σ² t² / 2) for all t.
 
     This is the definition used in the paper, where M_i(t) = ∑_s exp(ts) is the
@@ -450,9 +450,9 @@ lemma subgaussian_zero_implies_deterministic (p : JointPMF Ω) (g : ∀ i, Ω i 
 /-! **Note**: An older version of `subgaussian_concentration` using marginal-weighted
     sub-Gaussian (IsSubGaussianCentered) was here but had an unprovable gap.
     Use `subgaussian_concentration_counting` below instead, which uses the counting
-    measure sub-Gaussian definition matching the paper's Theorem 3.5. -/
+    measure sub-Gaussian definition matching the paper's Theorem 3.7. -/
 
-/-- **Sub-Gaussian Concentration with Counting Measure** (Theorem 3.5 as stated in paper).
+/-- **Sub-Gaussian Concentration with Counting Measure** (Theorem 3.7 as stated in paper).
 
     This is the version that matches the paper exactly:
     - Uses counting measure sub-Gaussian: M_i(t) ≤ |X_i| exp(σ² t²/2)
@@ -461,7 +461,7 @@ lemma subgaussian_zero_implies_deterministic (p : JointPMF Ω) (g : ∀ i, Ω i 
 
     P(S - E[S] ≥ a) ≤ Q_n(p) · (∏_i |Ω_i|)^{1/(n+1)} · exp(-a²/(2(n+1)∑σ²))
 
-    **Paper contribution**: This is Theorem 3.5. Fully proved. -/
+    **Paper contribution**: This is Theorem 3.7. Fully proved. -/
 theorem subgaussian_concentration_counting (hn : n ≥ 1) (p : JointPMF Ω)
     (g : ∀ i, Ω i → ℝ) (σsq : Fin n → ℝ)
     (hσ : ∀ i, IsSubGaussianCounting (fun s => g i s - p.expectation i (g i)) 0 (σsq i))
@@ -757,14 +757,14 @@ theorem sumMgf_of_independent (p : JointPMF Ω) (hp : p.IsIndependent)
   exact expectation_prod_of_independent p hp (fun i s => ENNReal.ofReal (Real.exp (t * g i s)))
 
 /-!
-## Weighted Sum Concentration
+## Weighted Sum Helper
 
 For weighted sums S = ∑ᵢ wᵢ gᵢ(Xᵢ), if each gᵢ(Xᵢ) is sub-Gaussian with parameter σᵢ²,
 then wᵢ gᵢ(Xᵢ) is sub-Gaussian with parameter wᵢ² σᵢ².
 
-This allows us to apply the sub-Gaussian concentration to weighted sums.
-
-**Paper reference**: Proposition 7.9 (Weighted sum concentration) in Zambrano (2025).
+**Note**: The main weighted sum concentration theorem (Proposition 6.5 in the paper) is not
+formalized here because it requires the counting measure sub-Gaussian definition.
+The helper lemma below can be used to build such a result.
 -/
 
 /-- Scaling a sub-Gaussian variable by a constant w scales the parameter by w².
