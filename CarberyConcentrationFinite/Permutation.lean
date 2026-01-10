@@ -262,51 +262,12 @@ def optimalPermutationUniform (hn : n ≥ 1) (p : UniformJointPMF n α)
 ## Computational Complexity
 
 Finding the optimal permutation requires checking n! possibilities.
-For small n this is feasible.
+For small n this is feasible. The paper discusses greedy heuristics for larger n,
+but these are practical algorithms rather than formal results.
 -/
 
 /-- Number of permutations of Fin n is n!. -/
 theorem card_perm_fin' : Fintype.card (Equiv.Perm (Fin n)) = Nat.factorial n := by
   simp [Fintype.card_perm]
-
-/-!
-## Greedy Heuristic
-
-For large n, we use a greedy algorithm that makes strongly dependent pairs consecutive.
-This is a practical approximation discussed in the paper.
--/
-
-/-- A greedy ordering heuristic (placeholder - returns identity). -/
-def greedyOrdering (p : UniformJointPMF n α) : Equiv.Perm (Fin n) := 1
-
-/-- The greedy ordering provides a reasonable approximation.
-
-    **Status: Intentional placeholder (not provable as stated)**
-
-    This theorem is NOT provable with the current `greedyOrdering` implementation
-    because:
-    1. `greedyOrdering` returns the identity permutation
-    2. The identity may be arbitrarily worse than the optimal permutation
-    3. No fixed approximation factor works for all distributions
-
-    A proper implementation would require:
-    1. A greedy algorithm that orders variables to maximize consecutive dependencies
-       (e.g., by iteratively selecting the most correlated pair)
-    2. Analysis showing this greedy approach achieves a bounded approximation ratio
-       under suitable assumptions on the dependence structure
-
-    For the formalization, we leave this as a placeholder to indicate where
-    such a result would fit in the theory. The paper discusses heuristics for
-    finding good orderings in practice.
-
-    **Paper contribution**: Placeholder - requires proper greedy algorithm. -/
-theorem greedy_ordering_bound (hn : n ≥ 1) (p : UniformJointPMF n α)
-    (h : Fin n → α → ℝ≥0∞) (c : Fin n → ℝ) :
-    permutationBoundUniform hn p h c (greedyOrdering p) ≤
-    2 * ⨅ σ : Equiv.Perm (Fin n), permutationBoundUniform hn p h c σ := by
-  -- INTENTIONAL PLACEHOLDER: This statement requires a proper greedy algorithm
-  -- implementation. The current identity permutation does not satisfy this bound
-  -- in general. See docstring for details.
-  sorry
 
 end

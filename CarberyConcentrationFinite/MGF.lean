@@ -155,27 +155,21 @@ theorem mgf_inequality_counting (hn : n ≥ 1) (p : JointPMF Ω)
         intro i _
         exact norm_eq i
 
-/-- The OLD theorem statement (for reference - uses marginal-weighted MGFs).
-    **THIS CANNOT BE PROVED FROM CARBERY'S INEQUALITY.**
-    Keeping for documentation purposes only. -/
-theorem mgf_inequality (hn : n ≥ 1) (p : JointPMF Ω)
-    (g : ∀ i, Ω i → ℝ) (t : Fin n → ℝ) (ht : ∀ i, t i ≥ 0) :
-    p.jointMgf g t ≤
-    carberyFunctional hn p *
-    ∏ i : Fin n, (p.mgf g i ((n + 1 : ℕ) * t i)) ^ (1 / (n + 1 : ℝ)) := by
-  -- This formulation using marginal-weighted MGFs CANNOT be proved from Carbery.
-  -- The gap between counting measure and marginal-weighted norms is essential.
-  -- See mgf_inequality_counting for what CAN be proved.
-  sorry
+/-! **Note**: A theorem `mgf_inequality` using marginal-weighted MGFs was previously here,
+    but it CANNOT be proved from Carbery's inequality. The gap between counting measure
+    and marginal-weighted norms is essential. Use `mgf_inequality_counting` instead. -/
 
-/-- Corollary: When all tᵢ = t, we get a bound on the sum's MGF.
+/-- Corollary: When all tᵢ = t, we get a bound on the sum's MGF using counting measure.
+
+    **IMPORTANT**: Uses counting measure MGF (mgfCounting), matching the paper's
+    Theorem 3.4 where M_i(t) = ∑_s exp(t·s).
 
     **Paper contribution**: Proved. -/
 theorem mgf_sum_uniform (hn : n ≥ 1) (p : JointPMF Ω)
     (g : ∀ i, Ω i → ℝ) (t : ℝ) (ht : t ≥ 0) :
     p.sumMgf g t ≤
     carberyFunctional hn p *
-    ∏ i : Fin n, (p.mgf g i ((n + 1 : ℕ) * t)) ^ (1 / (n + 1 : ℝ)) := by
+    ∏ i : Fin n, (mgfCounting (g i) ((n + 1 : ℕ) * t)) ^ (1 / (n + 1 : ℝ)) := by
   -- sumMgf equals jointMgf with all parameters equal
   have sumMgf_eq : p.sumMgf g t = p.jointMgf g (fun _ => t) := by
     simp only [JointPMF.sumMgf, JointPMF.jointMgf]
@@ -184,7 +178,7 @@ theorem mgf_sum_uniform (hn : n ≥ 1) (p : JointPMF Ω)
     congr 2
     rw [mul_sum]
   rw [sumMgf_eq]
-  exact mgf_inequality hn p g (fun _ => t) (fun _ => ht)
+  exact mgf_inequality_counting hn p g (fun _ => t) (fun _ => ht)
 
 /-!
 ## Sum Concentration (Chernoff-Type Bound)
@@ -197,10 +191,13 @@ This is a **paper contribution** giving Chernoff-type bounds for dependent sums.
 -/
 
 /-- The Chernoff bound for the sum S = ∑ᵢ gᵢ(Xᵢ) at threshold a with parameter t.
-    This is the bound before optimization over t. -/
+    This is the bound before optimization over t.
+
+    **IMPORTANT**: Uses counting measure MGF (mgfCounting), matching the paper's
+    Theorem 3.4 where M_i(t) = ∑_s exp(t·s). -/
 def chernoffBound (hn : n ≥ 1) (p : JointPMF Ω) (g : ∀ i, Ω i → ℝ) (a t : ℝ) : ℝ≥0∞ :=
   carberyFunctional hn p *
-  (∏ i : Fin n, (p.mgf g i ((n + 1 : ℕ) * t)) ^ (1 / (n + 1 : ℝ))) *
+  (∏ i : Fin n, (mgfCounting (g i) ((n + 1 : ℕ) * t)) ^ (1 / (n + 1 : ℝ))) *
   ENNReal.ofReal (Real.exp (-t * a))
 
 /-- **Sum Concentration** (Corollary 3.6) for finite spaces.
@@ -258,7 +255,7 @@ theorem sum_concentration (hn : n ≥ 1) (p : JointPMF Ω)
   have step3 : (∑ x, p.prob x * ENNReal.ofReal (Real.exp (t * ∑ i, g i (x i)))) =
       p.sumMgf g t := by simp only [JointPMF.sumMgf]
   have step4 : p.sumMgf g t * ENNReal.ofReal (Real.exp (-t * a)) ≤
-      (carberyFunctional hn p * ∏ i, (p.mgf g i ((n + 1 : ℕ) * t)) ^ (1 / (n + 1 : ℝ))) *
+      (carberyFunctional hn p * ∏ i, (mgfCounting (g i) ((n + 1 : ℕ) * t)) ^ (1 / (n + 1 : ℝ))) *
       ENNReal.ofReal (Real.exp (-t * a)) := by
     apply mul_le_mul_right'
     exact mgf_sum_uniform hn p g t ht
@@ -266,7 +263,7 @@ theorem sum_concentration (hn : n ≥ 1) (p : JointPMF Ω)
       ≤ (∑ x, p.prob x * ENNReal.ofReal (Real.exp (t * ∑ i, g i (x i)))) *
         ENNReal.ofReal (Real.exp (-t * a)) := by rw [← step2]; exact step1
     _ = p.sumMgf g t * ENNReal.ofReal (Real.exp (-t * a)) := by rw [step3]
-    _ ≤ (carberyFunctional hn p * ∏ i, (p.mgf g i ((n + 1 : ℕ) * t)) ^ (1 / (n + 1 : ℝ))) *
+    _ ≤ (carberyFunctional hn p * ∏ i, (mgfCounting (g i) ((n + 1 : ℕ) * t)) ^ (1 / (n + 1 : ℝ))) *
         ENNReal.ofReal (Real.exp (-t * a)) := step4
     _ = chernoffBound hn p g a t := by simp only [chernoffBound, mul_assoc]
 
@@ -283,16 +280,31 @@ This is a **paper contribution** extending sub-Gaussian bounds to dependent vari
 /-- A marginal is sub-Gaussian with parameter σ² if
     E[exp(t gᵢ(Xᵢ))] ≤ exp(σ² t² / 2) for all t.
 
-    In the finite case, this is a condition on finite sums. -/
+    In the finite case, this is a condition on finite sums.
+
+    **Note**: This is the marginal-weighted version. See `IsSubGaussianCounting` for
+    the counting measure version that matches the paper's Theorem 3.5. -/
 def JointPMF.IsSubGaussian (p : JointPMF Ω) (g : ∀ i, Ω i → ℝ) (i : Fin n) (σsq : ℝ) : Prop :=
   σsq ≥ 0 ∧ ∀ t : ℝ, p.mgf g i t ≤ ENNReal.ofReal (Real.exp (σsq * t ^ 2 / 2))
 
-/-- Centered sub-Gaussian: after mean subtraction. -/
+/-- Centered sub-Gaussian: after mean subtraction (marginal-weighted version). -/
 def JointPMF.IsSubGaussianCentered (p : JointPMF Ω) (g : ∀ i, Ω i → ℝ) (i : Fin n) (σsq : ℝ) : Prop :=
   let μ := p.expectation i (g i)
   σsq ≥ 0 ∧ ∀ t : ℝ,
     ∑ s : Ω i, p.marginal i s * ENNReal.ofReal (Real.exp (t * (g i s - μ))) ≤
     ENNReal.ofReal (Real.exp (σsq * t ^ 2 / 2))
+
+/-- **Counting measure sub-Gaussian** (matches paper's Theorem 3.5):
+    ∑_s exp(t · (g(s) - μ)) ≤ |Ω_i| · exp(σ² t² / 2) for all t.
+
+    This is the definition used in the paper, where M_i(t) = ∑_s exp(ts) is the
+    counting measure MGF, and the bound includes a factor of |X_i| = |Ω_i|.
+
+    **This is what Carbery's inequality can bound.** -/
+def IsSubGaussianCounting (g : Ω i → ℝ) (μ : ℝ) (σsq : ℝ) : Prop :=
+  σsq ≥ 0 ∧ ∀ t : ℝ,
+    ∑ s : Ω i, ENNReal.ofReal (Real.exp (t * (g s - μ))) ≤
+    (Fintype.card (Ω i) : ℝ≥0∞) * ENNReal.ofReal (Real.exp (σsq * t ^ 2 / 2))
 
 /-- The MGF of a centered function equals the centered MGF. -/
 theorem mgf_centered (p : JointPMF Ω) (g : ∀ i, Ω i → ℝ) (i : Fin n) (t : ℝ) :
@@ -435,191 +447,178 @@ lemma subgaussian_zero_implies_deterministic (p : JointPMF Ω) (g : ∀ i, Ω i 
   have contra : p.marginal i s * ENNReal.ofReal (Real.exp M) > 1 := lt_of_lt_of_le he_gt_one h2
   exact (not_lt.mpr h1) contra
 
-/-- **Sub-Gaussian Concentration** (Theorem 3.7) for finite spaces.
+/-! **Note**: An older version of `subgaussian_concentration` using marginal-weighted
+    sub-Gaussian (IsSubGaussianCentered) was here but had an unprovable gap.
+    Use `subgaussian_concentration_counting` below instead, which uses the counting
+    measure sub-Gaussian definition matching the paper's Theorem 3.5. -/
 
-    If each gᵢ(Xᵢ) is sub-Gaussian with parameter σᵢ², then for S = ∑ᵢ gᵢ(Xᵢ):
+/-- **Sub-Gaussian Concentration with Counting Measure** (Theorem 3.5 as stated in paper).
 
-    P(S - E[S] ≥ a) ≤ Qₙ(p) · exp(-a² / (2(n+1) ∑ᵢ σᵢ²))
+    This is the version that matches the paper exactly:
+    - Uses counting measure sub-Gaussian: M_i(t) ≤ |X_i| exp(σ² t²/2)
+    - Includes the cardinality factor (∏_i |X_i|)^{1/(n+1)}
+    - Requires ∑σ² > 0 (excludes degenerate deterministic case)
 
-    The factor (n+1) arises from the MGF bound being evaluated at (n+1)t.
+    P(S - E[S] ≥ a) ≤ Q_n(p) · (∏_i |Ω_i|)^{1/(n+1)} · exp(-a²/(2(n+1)∑σ²))
 
-    **Paper contribution**: Proved. -/
-theorem subgaussian_concentration (hn : n ≥ 1) (p : JointPMF Ω)
+    **Paper contribution**: This is Theorem 3.5. Fully proved. -/
+theorem subgaussian_concentration_counting (hn : n ≥ 1) (p : JointPMF Ω)
     (g : ∀ i, Ω i → ℝ) (σsq : Fin n → ℝ)
-    (hσ : ∀ i, p.IsSubGaussianCentered g i (σsq i))
+    (hσ : ∀ i, IsSubGaussianCounting (fun s => g i s - p.expectation i (g i)) 0 (σsq i))
+    (hσsum_pos : ∑ i, σsq i > 0)
     (a : ℝ) (ha : a > 0) :
     let μ := ∑ i, p.expectation i (g i)
     (∑ x : ∀ i, Ω i, if ∑ i, g i (x i) - μ ≥ a then p.prob x else 0) ≤
     carberyFunctional hn p *
+    (∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞)) ^ (1 / (n + 1 : ℝ)) *
     ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (n + 1 : ℕ) * ∑ i, σsq i))) := by
   intro μ
   -- Define centered functions
   let g' : ∀ i, Ω i → ℝ := fun i s => g i s - p.expectation i (g i)
   -- Key observation: ∑_i g_i(x_i) - μ = ∑_i g'_i(x_i)
   have sum_centered : ∀ x : ∀ i, Ω i, ∑ i, g i (x i) - μ = ∑ i, g' i (x i) := by
-    intro x
-    simp only [g', μ]
-    rw [← Finset.sum_sub_distrib]
-  -- Rewrite LHS using centered functions
+    intro x; simp only [g', μ]; rw [← Finset.sum_sub_distrib]
   have lhs_eq : (∑ x, if ∑ i, g i (x i) - μ ≥ a then p.prob x else 0) =
       (∑ x, if ∑ i, g' i (x i) ≥ a then p.prob x else 0) := by
-    apply Finset.sum_congr rfl
-    intro x _
-    rw [sum_centered]
+    apply Finset.sum_congr rfl; intro x _; rw [sum_centered]
   rw [lhs_eq]
-  -- Apply sum_concentration to get bound by infimum over t
-  have conc := sum_concentration hn p g' a ha
-  -- We need to show the infimum is at most RHS
-  -- Strategy: instantiate at optimal t* = a / ((n+1) ∑σ)
-  by_cases hσsum : ∑ i, σsq i > 0
-  · -- Case: ∑ σsq > 0, use optimal t*
-    -- The optimal t* for sub-Gaussian is t* = a / ((n+1) ∑σ²)
-    let t_opt := a / ((n + 1 : ℕ) * ∑ i, σsq i)
-    have ht_opt_pos : t_opt > 0 := by
-      simp only [t_opt]
-      positivity
-    have ht_opt_nonneg : t_opt ≥ 0 := le_of_lt ht_opt_pos
-    -- Bound the infimum by the value at t_opt
-    calc (∑ x, if ∑ i, g' i (x i) ≥ a then p.prob x else 0)
-        ≤ ⨅ t, ⨅ (_ : t ≥ 0), chernoffBound hn p g' a t := conc
-      _ ≤ chernoffBound hn p g' a t_opt := by
-          apply iInf₂_le t_opt ht_opt_nonneg
-      _ ≤ carberyFunctional hn p * ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * ↑(n + 1) * ∑ i, σsq i))) := by
-          -- Inline proof (same as subgaussian_optimal_t)
-          simp only [chernoffBound]
-          -- Step 1: Bound each MGF factor using mgf_subgaussian_bound
-          have factor_bound : ∀ i : Fin n,
-              (p.mgf g' i ((n + 1 : ℕ) * t_opt)) ^ ((1 : ℝ) / (n + 1)) ≤
-              ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) := by
-            intro i
-            exact mgf_subgaussian_bound p g i (σsq i) (hσ i) t_opt
-          -- Step 2: Bound the product
-          have prod_bound : ∏ i : Fin n, (p.mgf g' i ((n + 1 : ℕ) * t_opt)) ^ ((1 : ℝ) / (n + 1)) ≤
-              ∏ i : Fin n, ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) := by
-            apply Finset.prod_le_prod
-            · intro i _; exact zero_le _
-            · intro i _; exact factor_bound i
-          -- Step 3: Simplify product of exponentials
-          have exp_prod : ∏ i : Fin n, ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) =
-              ENNReal.ofReal (Real.exp (∑ i, σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) := by
-            rw [← ENNReal.ofReal_prod_of_nonneg]
-            · congr 1; rw [Real.exp_sum]
-            · intro i _; exact le_of_lt (Real.exp_pos _)
-          -- Step 4: Simplify exponent sum
-          have exp_sum_simp : (∑ i, σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2) =
-              (n + 1 : ℕ) * t_opt ^ 2 * (∑ i, σsq i) / 2 := by
-            conv_lhs => arg 2; ext i
-                        rw [show σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2 = (n + 1 : ℕ) * t_opt ^ 2 / 2 * σsq i by ring]
-            rw [← Finset.mul_sum]; ring
-          -- Step 5: Compute the final exponent at t_opt
-          have exp_arith : (n + 1 : ℕ) * t_opt ^ 2 * (∑ i, σsq i) / 2 + (-t_opt * a) =
-              -a ^ 2 / (2 * (n + 1 : ℕ) * ∑ i, σsq i) := by
-            simp only [t_opt]
-            have h1 : ((n + 1 : ℕ) : ℝ) * (∑ i, σsq i) ≠ 0 := by positivity
-            have h2 : (∑ i, σsq i) ≠ 0 := by linarith
-            field_simp; ring
-          -- Step 6: Combine bounds
-          calc carberyFunctional hn p *
-                (∏ i : Fin n, (p.mgf g' i (↑(n + 1) * t_opt)) ^ ((1 : ℝ) / (↑n + 1))) *
-                ENNReal.ofReal (Real.exp (-t_opt * a))
-              ≤ carberyFunctional hn p *
-                (∏ i : Fin n, ENNReal.ofReal (Real.exp (σsq i * ↑(n + 1) * t_opt ^ 2 / 2))) *
-                ENNReal.ofReal (Real.exp (-t_opt * a)) := by
-                  apply mul_le_mul_right'; apply mul_le_mul_left'; exact prod_bound
-            _ = carberyFunctional hn p *
-                ENNReal.ofReal (Real.exp (∑ i, σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) *
-                ENNReal.ofReal (Real.exp (-t_opt * a)) := by
-                  simp only [Nat.cast_add, Nat.cast_one] at exp_prod ⊢; rw [exp_prod]
-            _ = carberyFunctional hn p *
-                ENNReal.ofReal (Real.exp (∑ i, σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2) *
-                                Real.exp (-t_opt * a)) := by
-                  rw [mul_assoc, ← ENNReal.ofReal_mul (le_of_lt (Real.exp_pos _))]
-            _ = carberyFunctional hn p *
-                ENNReal.ofReal (Real.exp ((∑ i, σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2) + (-t_opt * a))) := by
-                  rw [← Real.exp_add]
-            _ = carberyFunctional hn p *
-                ENNReal.ofReal (Real.exp ((n + 1 : ℕ) * t_opt ^ 2 * (∑ i, σsq i) / 2 + (-t_opt * a))) := by
-                  simp only [Nat.cast_add, Nat.cast_one] at exp_sum_simp ⊢; rw [exp_sum_simp]
-            _ = carberyFunctional hn p *
-                ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (n + 1 : ℕ) * ∑ i, σsq i))) := by
-                  simp only [Nat.cast_add, Nat.cast_one] at exp_arith ⊢; rw [exp_arith]
-  · -- Case: ∑ σsq ≤ 0
-    -- If ∑ σsq ≤ 0 and each σsq_i ≥ 0 (from sub-Gaussian), then all σsq_i = 0
-    push_neg at hσsum
-    have hσ_nonneg : ∀ i, σsq i ≥ 0 := fun i => (hσ i).1
-    have hσsum_nonneg : ∑ i, σsq i ≥ 0 := Finset.sum_nonneg (fun i _ => hσ_nonneg i)
-    have hσsum_zero : ∑ i, σsq i = 0 := le_antisymm hσsum hσsum_nonneg
-    -- When ∑σ = 0, in Lean: -a²/(2(n+1)·0) = -a²/0 = 0 (division by zero convention)
-    -- So RHS = Q_n · exp(0) = Q_n · 1 = Q_n
-    -- But also all σsq_i = 0, so all centered vars are deterministic at 0
-    -- Hence sum = 0 a.s., and P(sum ≥ a) = 0 for a > 0
-    have hσ_all_zero : ∀ i, σsq i = 0 := by
+  -- Use optimal t* = a / ((n+1) ∑σ²)
+  let t_opt := a / ((n + 1 : ℕ) * ∑ i, σsq i)
+  have ht_opt_pos : t_opt > 0 := by simp only [t_opt]; positivity
+  have ht_opt_nonneg : t_opt ≥ 0 := le_of_lt ht_opt_pos
+  -- Use sum_concentration with counting measure MGF
+  have sum_conc := sum_concentration hn p g' a ha
+  -- Bound mgfCounting using counting-measure sub-Gaussian property
+  have counting_bound : ∀ i : Fin n,
+      (mgfCounting (g' i) ((n + 1 : ℕ) * t_opt)) ^ ((1 : ℝ) / (n + 1)) ≤
+      (Fintype.card (Ω i) : ℝ≥0∞) ^ ((1 : ℝ) / (n + 1)) *
+      ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) := by
       intro i
-      -- If ∑σ = 0 and all σ ≥ 0, then each σ = 0
-      by_contra hne
-      have hpos : σsq i > 0 := lt_of_le_of_ne (hσ_nonneg i) (Ne.symm hne)
-      have : ∑ j, σsq j ≥ σsq i := Finset.single_le_sum (fun j _ => hσ_nonneg j) (Finset.mem_univ i)
-      linarith
-    -- The probability is 0 since all centered variables are deterministic
-    -- This requires showing g'_i = 0 for all i when σ_i² = 0
-    have prob_zero : (∑ x, if ∑ i, g' i (x i) ≥ a then p.prob x else 0) = 0 := by
-      -- Each g'_i is 0 a.s. when σ_i² = 0
-      have g'_zero : ∀ i, ∀ s : Ω i, p.marginal i s ≠ 0 → g' i s = 0 := by
-        intro i s hms
-        have hσi_zero : σsq i = 0 := hσ_all_zero i
-        have hσi : p.IsSubGaussianCentered g i 0 := by rw [← hσi_zero]; exact hσ i
-        have := subgaussian_zero_implies_deterministic p g i hσi s hms
-        simp only [g', this, sub_self]
-      -- For any x with p.prob x ≠ 0, all marginals are nonzero
-      -- (if any marginal is 0, then p.prob x ≤ that marginal by marginalization)
-      -- So ∑_i g'_i(x_i) = 0 for such x
-      apply Finset.sum_eq_zero
-      intro x _
-      split_ifs with hsum
-      · -- Case: ∑_i g'_i(x_i) ≥ a
-        -- We show this is impossible when p.prob x ≠ 0, so p.prob x = 0
-        by_contra h_prob_ne
-        -- If p.prob x ≠ 0, then p.marginal i (x i) ≠ 0 for all i
-        -- (since p.prob x ≤ p.marginal i (x i) by marginalization)
-        have hmarg_ne : ∀ i, p.marginal i (x i) ≠ 0 := by
-          intro i
-          -- p.marginal i (x i) = ∑_{y : y_i = x_i} p.prob y ≥ p.prob x
-          have h_le : p.prob x ≤ p.marginal i (x i) := by
-            simp only [JointPMF.marginal]
-            have hnonneg : ∀ y ∈ (Finset.univ : Finset (∀ j, Ω j)), (0 : ℝ≥0∞) ≤
-                (if y i = x i then p.prob y else 0) := by
-              intro y _; split_ifs <;> exact zero_le _
-            have hmem : x ∈ (Finset.univ : Finset (∀ j, Ω j)) := Finset.mem_univ x
-            have hsingle := Finset.single_le_sum hnonneg hmem
-            simp only [eq_self_iff_true, if_true] at hsingle
-            exact hsingle
-          exact ne_of_gt (lt_of_lt_of_le (pos_iff_ne_zero.mpr h_prob_ne) h_le)
-        -- So g'_i(x_i) = 0 for all i
-        have hg'_zero : ∀ i, g' i (x i) = 0 := fun i => g'_zero i (x i) (hmarg_ne i)
-        -- Therefore ∑_i g'_i(x_i) = 0
-        have hsum_zero : ∑ i, g' i (x i) = 0 := Finset.sum_eq_zero (fun i _ => hg'_zero i)
-        -- But we assumed ∑_i g'_i(x_i) ≥ a > 0, contradiction
-        linarith
-      · -- Case: ∑_i g'_i(x_i) < a
-        rfl
-    rw [prob_zero]
-    exact zero_le _
+      have hσ_i := hσ i
+      -- g'_i s - 0 = g'_i s since μ = 0 in counting-measure definition
+      have g'_eq : ∀ s, g' i s - 0 = g' i s := fun s => sub_zero _
+      -- mgfCounting(g', (n+1)t) = ∑_s exp((n+1)t · g'(s))
+      simp only [mgfCounting]
+      let t' := (n + 1 : ℕ) * t_opt
+      have ht'_nonneg : t' ≥ 0 := by simp only [t']; positivity
+      -- Apply counting-measure sub-Gaussian bound at t'
+      have hbound := hσ_i.2 t'
+      simp only [sub_zero] at hbound
+      -- hbound: ∑_s exp(t' · g'(s)) ≤ |Ω_i| · exp(σ² t'²/2)
+      have t'_sq : σsq i * t' ^ 2 / 2 = σsq i * (n + 1 : ℕ) ^ 2 * t_opt ^ 2 / 2 := by
+        simp only [t']; ring
+      rw [t'_sq] at hbound
+      -- Take (n+1)th root
+      have h_exp_nonneg : (1 : ℝ) / (n + 1) ≥ 0 := by positivity
+      have step1 := ENNReal.rpow_le_rpow hbound h_exp_nonneg
+      -- Distribute root over product
+      have step2 : ((Fintype.card (Ω i) : ℝ≥0∞) *
+          ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) ^ 2 * t_opt ^ 2 / 2))) ^ ((1 : ℝ) / (n + 1)) =
+          (Fintype.card (Ω i) : ℝ≥0∞) ^ ((1 : ℝ) / (n + 1)) *
+          (ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) ^ 2 * t_opt ^ 2 / 2))) ^ ((1 : ℝ) / (n + 1)) :=
+        ENNReal.mul_rpow_of_nonneg _ _ h_exp_nonneg
+      rw [step2] at step1
+      -- Simplify the exp root
+      have step3 : (ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) ^ 2 * t_opt ^ 2 / 2))) ^ ((1 : ℝ) / (n + 1)) =
+          ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) := by
+        rw [ENNReal.ofReal_rpow_of_nonneg (le_of_lt (Real.exp_pos _)) h_exp_nonneg]
+        congr 1
+        rw [← Real.exp_mul]
+        congr 1
+        have hn1_ne : (n + 1 : ℝ) ≠ 0 := by positivity
+        simp only [Nat.cast_add, Nat.cast_one]
+        have h_sq_div : (n + 1 : ℝ) ^ 2 / (n + 1) = (n + 1 : ℝ) := by
+          rw [sq, mul_div_assoc, div_self hn1_ne, mul_one]
+        calc σsq i * (n + 1 : ℝ) ^ 2 * t_opt ^ 2 / 2 * ((1 : ℝ) / (n + 1))
+            = σsq i * t_opt ^ 2 / 2 * ((n + 1 : ℝ) ^ 2 / (n + 1)) := by ring
+          _ = σsq i * t_opt ^ 2 / 2 * (n + 1 : ℝ) := by rw [h_sq_div]
+          _ = σsq i * (n + 1 : ℝ) * t_opt ^ 2 / 2 := by ring
+      rw [step3] at step1
+      exact step1
+  -- Bound the product
+  have prod_bound : ∏ i : Fin n, (mgfCounting (g' i) ((n + 1 : ℕ) * t_opt)) ^ ((1 : ℝ) / (n + 1)) ≤
+      (∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞) ^ ((1 : ℝ) / (n + 1))) *
+      (∏ i : Fin n, ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2))) := by
+    calc ∏ i : Fin n, (mgfCounting (g' i) ((n + 1 : ℕ) * t_opt)) ^ ((1 : ℝ) / (n + 1))
+        ≤ ∏ i : Fin n, ((Fintype.card (Ω i) : ℝ≥0∞) ^ ((1 : ℝ) / (n + 1)) *
+            ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2))) :=
+          Finset.prod_le_prod (fun i _ => zero_le _) (fun i _ => counting_bound i)
+      _ = (∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞) ^ ((1 : ℝ) / (n + 1))) *
+          (∏ i : Fin n, ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2))) :=
+          Finset.prod_mul_distrib
+  -- Simplify the cardinality product
+  have card_prod : ∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞) ^ ((1 : ℝ) / (n + 1)) =
+      (∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞)) ^ ((1 : ℝ) / (n + 1)) := by
+    rw [ENNReal.prod_rpow_of_nonneg (by positivity : (1 : ℝ) / (n + 1) ≥ 0)]
+  -- Simplify the exp product
+  have exp_prod : ∏ i : Fin n, ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) =
+      ENNReal.ofReal (Real.exp (∑ i, σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) := by
+    rw [← ENNReal.ofReal_prod_of_nonneg]; congr 1; rw [Real.exp_sum]
+    intro i _; exact le_of_lt (Real.exp_pos _)
+  -- The key arithmetic
+  have exp_sum_simp : (∑ i, σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2) =
+      (n + 1 : ℕ) * t_opt ^ 2 * (∑ i, σsq i) / 2 := by
+    conv_lhs => arg 2; ext i
+                rw [show σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2 = (n + 1 : ℕ) * t_opt ^ 2 / 2 * σsq i by ring]
+    rw [← Finset.mul_sum]; ring
+  have exp_arith : (n + 1 : ℕ) * t_opt ^ 2 * (∑ i, σsq i) / 2 + (-t_opt * a) =
+      -a ^ 2 / (2 * (n + 1 : ℕ) * ∑ i, σsq i) := by
+    simp only [t_opt]
+    have h1 : ((n + 1 : ℕ) : ℝ) * (∑ i, σsq i) ≠ 0 := by positivity
+    have h2 : (∑ i, σsq i) ≠ 0 := by linarith
+    field_simp; ring
+  -- Combine everything
+  calc (∑ x, if ∑ i, g' i (x i) ≥ a then p.prob x else 0)
+      ≤ ⨅ t ∈ Set.Ici (0 : ℝ), chernoffBound hn p g' a t := sum_conc
+    _ ≤ chernoffBound hn p g' a t_opt := iInf₂_le t_opt ht_opt_nonneg
+    _ = carberyFunctional hn p *
+        (∏ i : Fin n, (mgfCounting (g' i) ((n + 1 : ℕ) * t_opt)) ^ (1 / (n + 1 : ℝ))) *
+        ENNReal.ofReal (Real.exp (-t_opt * a)) := rfl
+    _ ≤ carberyFunctional hn p *
+        ((∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞) ^ ((1 : ℝ) / (n + 1))) *
+         (∏ i : Fin n, ENNReal.ofReal (Real.exp (σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)))) *
+        ENNReal.ofReal (Real.exp (-t_opt * a)) := by
+        apply mul_le_mul_right'; apply mul_le_mul_left'; exact prod_bound
+    _ = carberyFunctional hn p *
+        (∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞)) ^ ((1 : ℝ) / (n + 1)) *
+        (ENNReal.ofReal (Real.exp (∑ i, σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2)) *
+         ENNReal.ofReal (Real.exp (-t_opt * a))) := by
+        rw [card_prod, exp_prod]; ring
+    _ = carberyFunctional hn p *
+        (∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞)) ^ ((1 : ℝ) / (n + 1)) *
+        ENNReal.ofReal (Real.exp ((∑ i, σsq i * (n + 1 : ℕ) * t_opt ^ 2 / 2) + (-t_opt * a))) := by
+        rw [← ENNReal.ofReal_mul (le_of_lt (Real.exp_pos _)), ← Real.exp_add]
+    _ = carberyFunctional hn p *
+        (∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞)) ^ ((1 : ℝ) / (n + 1)) *
+        ENNReal.ofReal (Real.exp ((n + 1 : ℕ) * t_opt ^ 2 * (∑ i, σsq i) / 2 + (-t_opt * a))) := by
+        simp only [Nat.cast_add, Nat.cast_one] at exp_sum_simp ⊢; rw [exp_sum_simp]
+    _ = carberyFunctional hn p *
+        (∏ i : Fin n, (Fintype.card (Ω i) : ℝ≥0∞)) ^ ((1 : ℝ) / (n + 1)) *
+        ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (n + 1 : ℕ) * ∑ i, σsq i))) := by
+        simp only [Nat.cast_add, Nat.cast_one] at exp_arith ⊢; rw [exp_arith]
 
-/-- At t* = a / ((n+1) ∑ᵢ σᵢ²), the Chernoff bound for sub-Gaussian variables gives
+/-- At t* = a / ((n+1) ∑ᵢ σᵢ²), the Chernoff-type bound for sub-Gaussian variables gives
     the claimed concentration inequality.
 
-    **Paper contribution**: To be proved (complex computation). -/
+    **Note**: This uses the MARGINAL-WEIGHTED MGF (p.mgf), not the counting measure MGF.
+    This is appropriate for sub-Gaussian bounds since the sub-Gaussian property is defined
+    in terms of marginal-weighted expectations E[exp(tX)].
+
+    **Paper contribution**: Proved. -/
 theorem subgaussian_optimal_t (hn : n ≥ 1) (p : JointPMF Ω)
     (g : ∀ i, Ω i → ℝ) (σsq : Fin n → ℝ)
     (hσ : ∀ i, p.IsSubGaussianCentered g i (σsq i))
     (hpos : ∑ i, σsq i > 0) (a : ℝ) (ha : a > 0) :
+    let g' := fun i s => g i s - p.expectation i (g i)
     let t_opt := a / ((n + 1 : ℕ) * ∑ i, σsq i)
-    chernoffBound hn p (fun i s => g i s - p.expectation i (g i)) a t_opt ≤
+    -- The marginal-weighted Chernoff bound at t_opt
+    carberyFunctional hn p *
+    (∏ i : Fin n, (p.mgf g' i ((n + 1 : ℕ) * t_opt)) ^ (1 / (n + 1 : ℝ))) *
+    ENNReal.ofReal (Real.exp (-t_opt * a)) ≤
     carberyFunctional hn p *
     ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (n + 1 : ℕ) * ∑ i, σsq i))) := by
   -- Define centered functions
-  let g' : ∀ i, Ω i → ℝ := fun i s => g i s - p.expectation i (g i)
-  let t_opt := a / ((n + 1 : ℕ) * ∑ i, σsq i)
+  intro g' t_opt
   -- The Chernoff bound is: Q_n · ∏_i M_i((n+1)t)^{1/(n+1)} · exp(-t·a)
   -- Under sub-Gaussian assumption: M_i(t) ≤ exp(σᵢ² t² / 2)
   -- So M_i((n+1)t)^{1/(n+1)} ≤ exp(σᵢ² (n+1) t² / 2)
@@ -630,7 +629,6 @@ theorem subgaussian_optimal_t (hn : n ≥ 1) (p : JointPMF Ω)
   -- = (n+1) · (a² / ((n+1)² (∑σ)²)) · ∑σ / 2 - a² / ((n+1) ∑σ)
   -- = a² / (2(n+1) ∑σ) - a² / ((n+1) ∑σ)
   -- = -a² / (2(n+1) ∑σ)
-  simp only [chernoffBound]
   -- Step 1: Bound each MGF factor using mgf_subgaussian_bound
   -- Each (p.mgf g' i ((n+1)*t))^{1/(n+1)} ≤ exp(σᵢ² (n+1) t² / 2)
   have factor_bound : ∀ i : Fin n,
@@ -674,7 +672,7 @@ theorem subgaussian_optimal_t (hn : n ≥ 1) (p : JointPMF Ω)
     field_simp
     ring
   -- Step 6: Combine bounds
-  -- chernoffBound = Q * prod * exp(-t*a)
+  -- Q * prod * exp(-t*a)
   -- ≤ Q * exp(∑ σᵢ² (n+1) t² / 2) * exp(-t*a)
   -- = Q * exp((n+1) t² ∑σ / 2 - t*a)
   -- = Q * exp(-a²/(2(n+1)∑σ))
@@ -708,123 +706,10 @@ theorem subgaussian_optimal_t (hn : n ≥ 1) (p : JointPMF Ω)
           simp only [Nat.cast_add, Nat.cast_one] at exp_arith ⊢
           rw [exp_arith]
 
-/-!
-## Independence Simplification
-
-Under independence, the bound simplifies (Q_n normalizes).
--/
-
-/-- Under independence, the Q_n factor normalizes.
-
-    **Paper contribution**: To be proved. -/
-theorem subgaussian_independent (hn : n ≥ 1) (p : JointPMF Ω)
-    (hp : p.IsIndependent)
-    (g : ∀ i, Ω i → ℝ) (σsq : Fin n → ℝ)
-    (hσ : ∀ i, p.IsSubGaussianCentered g i (σsq i))
-    (a : ℝ) (ha : a > 0) :
-    let μ := ∑ i, p.expectation i (g i)
-    (∑ x : ∀ i, Ω i, if ∑ i, g i (x i) - μ ≥ a then p.prob x else 0) ≤
-    ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (n + 1 : ℕ) * ∑ i, σsq i))) := by
-  intro μ
-  -- Step 1: Apply subgaussian_concentration to get bound with Q_n factor
-  have base := subgaussian_concentration hn p g σsq hσ a ha
-  -- Step 2: Under independence, Q_n ≤ 1
-  -- Key fact: When p is independent, the Carbery functional Q_n ≤ 1.
-  -- This follows from: under independence, consecutive bivariate marginals factor,
-  -- and the resulting expression is bounded by 1.
-  have qn_le_one : carberyFunctional hn p ≤ 1 := by
-    -- Q_n^{n+1} = ∑_s p₁(s₁) · p₁₂(s₁,s₂) · ⋯ · pₙ(sₙ)
-    -- Under independence: p_{j,j+1}(s_j, s_{j+1}) = p_j(s_j) · p_{j+1}(s_{j+1})
-    -- So Q_n^{n+1} = ∑_s p₁(s₁)² · p₂(s₂)² · ⋯ · pₙ(sₙ)² = ∏_i (∑_{s_i} p_i(s_i)²)
-    -- Since p_i(s_i)² ≤ p_i(s_i) (for 0 ≤ p_i(s_i) ≤ 1), we have ∑_s p_i(s)² ≤ 1
-    -- Therefore Q_n^{n+1} ≤ 1, hence Q_n ≤ 1.
-    simp only [carberyFunctional]
-    -- Key fact: under independence, carberyFunctionalPow = ∏_i (∑_{s_i} p_i(s_i)²)
-    -- This is essentially carberyFunctional_of_independent
-    -- Each such factor ≤ 1 since p² ≤ p when 0 ≤ p ≤ 1 and ∑ p = 1
-    have pow_le_one : carberyFunctionalPow hn p ≤ 1 := by
-      -- Key helper: ∑_s p(s)² ≤ 1 for any marginal
-      have marginal_sq_sum_le : ∀ i : Fin n, ∑ s : Ω i, p.marginal i s * p.marginal i s ≤ 1 := by
-        intro i
-        have h : ∀ s, p.marginal i s * p.marginal i s ≤ p.marginal i s := by
-          intro s
-          calc p.marginal i s * p.marginal i s
-              ≤ p.marginal i s * 1 := mul_le_mul_left' (marginal_le_one p i s) _
-            _ = p.marginal i s := mul_one _
-        calc ∑ s, p.marginal i s * p.marginal i s
-            ≤ ∑ s, p.marginal i s := Finset.sum_le_sum (fun s _ => h s)
-          _ = 1 := p.marginal_sum_eq_one i
-      -- Under independence, carberyFunctionalPow factors as ∏_i (∑_{s_i} p_i(s_i)²)
-      -- Handle n=1 and n≥2 cases separately
-      rcases Nat.lt_or_ge n 2 with hn1 | hn2
-      · -- Case n = 1: Since n ≥ 1 and n < 2, we have n = 1
-        have hn_eq : n = 1 := by omega
-        subst hn_eq
-        -- For n=1: carberyFunctionalPow = ∑_s p_0(s_0) * (empty product) * p_0(s_0) = ∑_s p_0(s_0)²
-        -- First simplify: for n=1, the product over Fin (1-1) = Fin 0 is empty = 1
-        -- and both boundary indices are 0
-        have h_simplify : carberyFunctionalPow (by omega : 1 ≥ 1) p =
-            ∑ s : ∀ i : Fin 1, Ω i, p.marginal 0 (s 0) * p.marginal 0 (s 0) := by
-          simp only [carberyFunctionalPow]
-          congr 1
-          ext s
-          -- The product over Fin 0 is 1
-          have h_prod : (∏ j : Fin (1 - 1), p.bivariateMarginai j
-              (s ⟨j.val, Nat.lt_of_lt_pred j.isLt⟩)
-              (s ⟨j.val + 1, Nat.add_lt_of_lt_sub j.isLt⟩)) = 1 := by
-            convert Fin.prod_univ_zero _
-          rw [h_prod, mul_one]
-          -- Now show the two marginal terms are the same (both are p.marginal 0 (s 0))
-          rfl
-        rw [h_simplify]
-        -- Now show ∑ s : (∀ i : Fin 1, Ω i), p.marginal 0 (s 0) * p.marginal 0 (s 0) ≤ 1
-        -- Reindex using the fact that (∀ i : Fin 1, Ω i) ≃ Ω 0
-        -- Direct calculation: sum over (∀ i : Fin 1, Ω i) is equivalent to sum over Ω 0
-        calc ∑ s : ∀ i : Fin 1, Ω i, p.marginal 0 (s 0) * p.marginal 0 (s 0)
-            = ∑ t : Ω 0, p.marginal 0 t * p.marginal 0 t := by
-              apply Fintype.sum_equiv (Equiv.piUnique (Ω ·))
-              intro x
-              rfl
-          _ ≤ 1 := marginal_sq_sum_le 0
-      · -- Case n ≥ 2: use carberyFunctional_of_independent
-        rw [carberyFunctional_of_independent hn2 p hp]
-        -- Now we need: ∏ i, (lpNormFinite 2 (p.marginal i))^2 ≤ 1
-        simp only [lpNormFinite]
-        -- Convert (∑ s, p^2)^{1/2})^2 = ∑ s, p^2 using rpow arithmetic
-        have factor_eq : ∀ i : Fin n, ((∑ s : Ω i, p.marginal i s ^ (2 : ℝ)) ^ (1/2 : ℝ)) ^ (2 : ℕ) =
-            ∑ s : Ω i, p.marginal i s ^ (2 : ℝ) := by
-          intro i
-          rw [← ENNReal.rpow_natCast _ (2 : ℕ), ← ENNReal.rpow_mul]
-          simp only [one_div, Nat.cast_ofNat, isUnit_iff_ne_zero, ne_eq, OfNat.ofNat_ne_zero,
-                     not_false_eq_true, IsUnit.inv_mul_cancel, ENNReal.rpow_one]
-        simp_rw [factor_eq]
-        -- Now show ∏ i, (∑ s, p_i(s)^2) ≤ 1
-        have factor_le_one : ∀ i : Fin n, ∑ s : Ω i, p.marginal i s ^ (2 : ℝ) ≤ 1 := by
-          intro i
-          have rpow_two_eq : ∀ x : ℝ≥0∞, x ^ (2 : ℝ) = x * x := by
-            intro x
-            rw [show (2 : ℝ) = ((2 : ℕ) : ℝ) from by norm_num, ENNReal.rpow_natCast, pow_two]
-          simp_rw [rpow_two_eq]
-          exact marginal_sq_sum_le i
-        -- Product of terms ≤ 1 is ≤ 1
-        calc ∏ i : Fin n, ∑ s : Ω i, p.marginal i s ^ (2 : ℝ)
-            ≤ ∏ _ : Fin n, (1 : ℝ≥0∞) := Finset.prod_le_prod (fun _ _ => zero_le _)
-                                           (fun i _ => factor_le_one i)
-          _ = 1 := Finset.prod_const_one
-    -- Use rpow monotonicity: x^r ≤ 1 when x ≤ 1 and r ≥ 0
-    have h_exp_pos : (1 : ℝ) / (n + 1) > 0 := by positivity
-    calc (carberyFunctionalPow hn p) ^ (1 / (n + 1 : ℝ))
-        ≤ 1 ^ (1 / (n + 1 : ℝ)) := ENNReal.rpow_le_rpow pow_le_one (le_of_lt h_exp_pos)
-      _ = 1 := ENNReal.one_rpow _
-  -- Step 3: Q_n * exp(...) ≤ 1 * exp(...) = exp(...)
-  calc (∑ x, if ∑ i, g i (x i) - μ ≥ a then p.prob x else 0)
-      ≤ carberyFunctional hn p *
-        ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * ↑(n + 1) * ∑ i, σsq i))) := base
-    _ ≤ 1 * ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * ↑(n + 1) * ∑ i, σsq i))) := by
-        apply mul_le_mul_right'
-        exact qn_le_one
-    _ = ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * ↑(n + 1) * ∑ i, σsq i))) := by
-        rw [one_mul]
+/-! **Note**: A theorem `subgaussian_independent` showing Q_n ≤ 1 under independence was here,
+    but it used the marginal-weighted sub-Gaussian definition which is incompatible with
+    Carbery's inequality. Use `subgaussian_concentration_counting` with `IsSubGaussianCounting`
+    for results compatible with the paper's framework. -/
 
 /-!
 ## Finite Sum Advantages
@@ -922,55 +807,9 @@ theorem isSubGaussianCentered_scale (p : JointPMF Ω) (g : ∀ i, Ω i → ℝ)
           congr 1
           ring
 
-/-- **Weighted Sum Concentration** (Proposition 7.9)
-
-    Let g : ∀ i, Ω i → ℝ be functions where each gᵢ(Xᵢ) is sub-Gaussian with
-    parameter σᵢ². For weights w : Fin n → ℝ (with wᵢ > 0), consider the
-    weighted sum S = ∑ᵢ wᵢ gᵢ(Xᵢ).
-
-    Then for a > 0:
-    P(S - E[S] ≥ a) ≤ Qₙ(p) · exp(-a² / (2(n+1) ∑ᵢ wᵢ² σᵢ²))
-
-    **Proof**: Apply sub-Gaussian concentration (Theorem 3.7) to the scaled
-    functions wᵢ·gᵢ, noting that wᵢ·gᵢ(Xᵢ) is sub-Gaussian with parameter wᵢ²σᵢ².
-
-    **Paper contribution**: Proposition 7.9. -/
-theorem weighted_sum_concentration (hn : n ≥ 1) (p : JointPMF Ω)
-    (g : ∀ i, Ω i → ℝ) (σsq : Fin n → ℝ) (w : Fin n → ℝ)
-    (hσ : ∀ i, p.IsSubGaussianCentered g i (σsq i))
-    (a : ℝ) (ha : a > 0) :
-    let g' := fun i s => w i * g i s
-    let μ := ∑ i, p.expectation i (g' i)
-    (∑ x : ∀ i, Ω i, if ∑ i, g' i (x i) - μ ≥ a then p.prob x else 0) ≤
-    carberyFunctional hn p *
-    ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (n + 1 : ℕ) * ∑ i, w i ^ 2 * σsq i))) := by
-  intro g' μ
-  -- The scaled functions w·g are sub-Gaussian with scaled parameters
-  have hσ' : ∀ i, p.IsSubGaussianCentered g' i (w i ^ 2 * σsq i) := by
-    intro i
-    exact isSubGaussianCentered_scale p g i (σsq i) (w i) (hσ i)
-  -- Apply the standard sub-Gaussian concentration theorem
-  exact subgaussian_concentration hn p g' (fun i => w i ^ 2 * σsq i) hσ' a ha
-
-/-- Corollary: Weighted sum concentration with uniform weights.
-    When all weights are equal to w, the bound simplifies. -/
-theorem weighted_sum_concentration_uniform (hn : n ≥ 1) (p : JointPMF Ω)
-    (g : ∀ i, Ω i → ℝ) (σsq : Fin n → ℝ) (w : ℝ)
-    (hσ : ∀ i, p.IsSubGaussianCentered g i (σsq i))
-    (a : ℝ) (ha : a > 0) :
-    let g' := fun i s => w * g i s
-    let μ := ∑ i, p.expectation i (g' i)
-    (∑ x : ∀ i, Ω i, if ∑ i, g' i (x i) - μ ≥ a then p.prob x else 0) ≤
-    carberyFunctional hn p *
-    ENNReal.ofReal (Real.exp (-a ^ 2 / (2 * (n + 1 : ℕ) * w ^ 2 * ∑ i, σsq i))) := by
-  intro g' μ
-  -- Apply the general weighted version
-  have := weighted_sum_concentration hn p g σsq (fun _ => w) hσ a ha
-  -- Simplify: ∑ᵢ w² σᵢ² = w² ∑ᵢ σᵢ²
-  have sum_simplify : ∑ i : Fin n, w ^ 2 * σsq i = w ^ 2 * ∑ i, σsq i := by
-    rw [← Finset.mul_sum]
-  simp only [sum_simplify] at this
-  convert this using 3
-  ring
+/-! **Note**: Theorems `weighted_sum_concentration` and `weighted_sum_concentration_uniform`
+    were here but used the marginal-weighted sub-Gaussian definition (`IsSubGaussianCentered`).
+    This definition is incompatible with Carbery's inequality. For weighted sum bounds
+    using the counting measure approach, adapt `subgaussian_concentration_counting`. -/
 
 end
